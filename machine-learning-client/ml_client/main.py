@@ -1,7 +1,14 @@
+"""
+This module repeatedly inserts mock data into a MongoDB collection.
+"""
 import os
 import time
 from pymongo import MongoClient
 def main():
+    """
+    Connects to MongoDB using MONGO_URI (from environment or default),
+    then inserts a mock document every 5 seconds.
+    """
     mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
     client = MongoClient(mongo_uri)
     db = client["ml_database"]

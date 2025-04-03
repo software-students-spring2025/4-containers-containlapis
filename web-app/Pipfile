@@ -11,6 +11,7 @@ pytest-flask = "*"
 coverage = "*"
 pylint = "*"
 black = "*"
+tomli = "*"
 
 [dev-packages]
 

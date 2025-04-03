@@ -1,3 +1,6 @@
+"""
+This module defines a Flask app that connects to MongoDB and displays the latest record.
+"""
 from flask import Flask, render_template
 import os
 from pymongo import MongoClient
@@ -6,6 +9,9 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
+    """
+    Renders the index.html template with the latest record from the ml_database.
+    """
     mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
     client = MongoClient(mongo_uri)
     db = client["ml_database"]
@@ -15,4 +21,4 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
+    
