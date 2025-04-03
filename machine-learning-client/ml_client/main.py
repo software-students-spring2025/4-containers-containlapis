@@ -1,9 +1,12 @@
 """
 This module repeatedly inserts mock data into a MongoDB collection.
 """
+
 import os
 import time
 from pymongo import MongoClient
+
+
 def main():
     """
     Connects to MongoDB using MONGO_URI (from environment or default),
@@ -15,13 +18,11 @@ def main():
     collection = db["ml_collection"]
 
     while True:
-        mock = {
-            "status": "ongoing",
-            "message": "trial test, sending message"
-        }
+        mock = {"status": "ongoing", "message": "trial test, sending message"}
         collection.insert_one(mock)
         print("Inserted mock data once into MongoDB.")
         time.sleep(5)
+
 
 if __name__ == "__main__":
     main()
