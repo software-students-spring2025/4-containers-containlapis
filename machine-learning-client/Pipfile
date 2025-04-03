@@ -9,7 +9,8 @@ pytest = "*"
 coverage = "*"
 pylint = "*"
 black = "*"
-tomli = "*"
+tomli = "*" 
+typing_extensions = "*"
 
 [dev-packages]
 
