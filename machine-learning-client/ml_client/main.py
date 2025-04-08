@@ -27,6 +27,7 @@ def record_audio(filename: str, duration: int = 10, fs: int = 44100):
     sf.write(filename, recording, fs)
     print(f"Recording complete. Audio saved as {filename}")
 
+
 def transcribe_audio(filename: str, model: str = "gpt-4o-transcribe") -> str:
     """
     Send the audio file to OpenAI's transcription API and get back the transcript.
@@ -44,10 +45,10 @@ def transcribe_audio(filename: str, model: str = "gpt-4o-transcribe") -> str:
     client = OpenAI()
     with open(filename, "rb") as audio_file:
         transcription_response = client.audio.transcriptions.create(
-            model=model,
-            file=audio_file,
+            model=model, file=audio_file,
         )
     return transcription_response.text
+
 
 def get_feedback_from_gpt(text: str, model: str = "gpt-4o") -> str:
     """
@@ -65,17 +66,23 @@ def get_feedback_from_gpt(text: str, model: str = "gpt-4o") -> str:
     response = client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": '''You are an interview coach.
+            {
+                "role": "system",
+                "content": """You are an interview coach.
              Give constructive feedback on the user's answer to a job interview question.
-             Highlight strengths, suggest improvements, and be concise.'''},
+             Highlight strengths, suggest improvements, and be concise.""",
+            },
             {"role": "user", "content": text},
         ],
         temperature=0.7,
-   )
+    )
 
     return response.choices[0].message.content
 
-def save_recording_to_mongodb(filename: str, text: str, gpt_feedback: str, duration: int = 10):
+
+def save_recording_to_mongodb(
+    filename: str, text: str, gpt_feedback: str, duration: int = 10
+):
     """
     Save metadata about the recording to MongoDB.
 
@@ -100,14 +107,12 @@ def save_recording_to_mongodb(filename: str, text: str, gpt_feedback: str, durat
         "transcript": text,
         "feedback": gpt_feedback,
         "status": "processed",
-        "model_used": {
-            "transcription": "gpt-4o-transcribe",
-            "feedback": "gpt-4o"
-        }
+        "model_used": {"transcription": "gpt-4o-transcribe", "feedback": "gpt-4o"},
     }
 
     collection.insert_one(document)
     print("Saved recording metadata to MongoDB.")
+
 
 def mock_data_insertion():
     """
@@ -123,6 +128,7 @@ def mock_data_insertion():
         collection.insert_one(mock)
         print("Inserted mock data once into MongoDB.")
         time.sleep(5)
+
 
 if __name__ == "__main__":
     # Record user response
