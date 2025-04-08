@@ -65,7 +65,9 @@ def get_feedback_from_gpt(text: str, model: str = "gpt-4o") -> str:
     response = client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": "You are an interview coach. Give constructive feedback on the user's answer to a job interview question. Highlight strengths, suggest improvements, and be concise."},
+            {"role": "system", "content": '''You are an interview coach. 
+             Give constructive feedback on the user's answer to a job interview question. 
+             Highlight strengths, suggest improvements, and be concise.'''},
             {"role": "user", "content": text},
         ],
         temperature=0.7,
