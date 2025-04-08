@@ -1,7 +1,7 @@
 """
 This module repeatedly inserts mock data into a MongoDB collection.
 """
-
+from datetime import datetime
 import os
 import time
 import sounddevice as sd
@@ -10,7 +10,7 @@ import openai
 from openai import OpenAI
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from datetime import datetime
+
 
 def record_audio(filename: str, duration: int = 10, fs: int = 44100):
     """
@@ -40,17 +40,16 @@ def transcribe_audio(filename: str, model: str = "gpt-4o-transcribe") -> str:
     """
     load_dotenv()  # Load from .env
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    
+
     client = OpenAI()
     with open(filename, "rb") as audio_file:
         transcription_response = client.audio.transcriptions.create(
             model=model,
             file=audio_file,
         )
-    
     return transcription_response.text
 
-def get_feedback_from_gpt(transcript: str, model: str = "gpt-4o") -> str:
+def get_feedback_from_gpt(text: str, model: str = "gpt-4o") -> str:
     """
     Send the transcript to the GPT API and return feedback.
 
@@ -67,14 +66,14 @@ def get_feedback_from_gpt(transcript: str, model: str = "gpt-4o") -> str:
         model=model,
         messages=[
             {"role": "system", "content": "You are an interview coach. Give constructive feedback on the user's answer to a job interview question. Highlight strengths, suggest improvements, and be concise."},
-            {"role": "user", "content": transcript},
+            {"role": "user", "content": text},
         ],
         temperature=0.7,
     )
 
     return response.choices[0].message.content
 
-def save_recording_to_mongodb(audio_filename: str, transcript: str, feedback: str, duration: int = 10):
+def save_recording_to_mongodb(filename: str, text: str, gpt_feedback: str, duration: int = 10):
     """
     Save metadata about the recording to MongoDB.
 
@@ -94,10 +93,10 @@ def save_recording_to_mongodb(audio_filename: str, transcript: str, feedback: st
     # Build document to store metadata
     document = {
         "timestamp": datetime.utcnow(),
-        "filename": audio_filename,
+        "filename": filename,
         "duration_sec": duration,
-        "transcript": transcript,
-        "feedback": feedback,
+        "transcript": text,
+        "feedback": gpt_feedback,
         "status": "processed",
         "model_used": {
             "transcription": "gpt-4o-transcribe",
