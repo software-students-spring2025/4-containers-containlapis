@@ -132,7 +132,7 @@ if __name__ == "__main__":
     print("Transcribing audio...")
     transcript = transcribe_audio(audio_filename)
     print("Transcript:", transcript)
-    
+
     # Get feedback from GPT
     feedback = get_feedback_from_gpt(transcript)
     print("\nAI Feedback:")

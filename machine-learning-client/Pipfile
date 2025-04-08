@@ -11,6 +11,10 @@ pylint = "*"
 black = "*"
 tomli = "*" 
 typing_extensions = "*"
+sounddevice = "*"
+soundfile = "*"
+openai = "*"
+python-dotenv = "*"
 
 [dev-packages]
 black = "*"
