@@ -1,0 +1,29 @@
+name: run-unit-tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        subdir: [web-app, machine-learning-client]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          cd ${{ matrix.subdir }}
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv install --dev
+
+      - name: Run tests and collect coverage
+        run: |
+          cd ${{ matrix.subdir }}
+          pipenv run pytest --cov=. --cov-report=term-missing
