@@ -3,3 +3,6 @@ pytest
 coverage
 black
 pylint
+sounddevice
+soundfile
+openai
