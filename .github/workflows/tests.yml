@@ -31,5 +31,11 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest-cov  # <- Add this line
+          pip install pytest-cov 
+          
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+           python-version: "3.10"
+
 
