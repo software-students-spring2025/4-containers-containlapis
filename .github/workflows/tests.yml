@@ -36,15 +36,6 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y portaudio19-dev
 
-      - name: Install Python dependencies
-        working-directory: machine-learning-client
-        run: |
-          cd ${{ matrix.subdir }}
-          python -m pip install --upgrade pip
-          pip install pipenv
-          pipenv install --dev
-
-
 
 
 
