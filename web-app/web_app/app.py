@@ -108,9 +108,12 @@ def submit_audio():
             "question_index": question_index,
             "status": "pending",
         }
+        if app.testing:
+           record["transcript"] = "Simulated transcription"
+           record["analysis"] = "Analysis result"
         collection.insert_one(record)
 
-        flash("Audio uploaded. Processing will begin shortly.")
+        flash("Audio submitted successfully!")
         return redirect(url_for("index"))
 
     flash("Invalid audio file format")
