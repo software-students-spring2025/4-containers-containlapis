@@ -12,8 +12,6 @@ from dotenv import load_dotenv
 import pymongo
 
 
-
-
 def record_audio(filename: str, duration: int = 10, file_storage: int = 44100):
     """
     Record audio from the microphone and save it to a file.
@@ -45,6 +43,7 @@ def transcribe_audio(filename: str, model: str = "whisper-1") -> str:
             file=audio_file,
         )
     return response.text
+
 
 def get_feedback_from_gpt(text: str, model: str = "gpt-4o") -> str:
     """
@@ -164,3 +163,4 @@ if __name__ == "__main__":
                 )
         else:
             time.sleep(3)
+
