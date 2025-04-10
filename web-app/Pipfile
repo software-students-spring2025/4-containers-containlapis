@@ -13,6 +13,7 @@ pylint = "*"
 black = "*"
 tomli = "*"
 typing_extensions = "*"
+pytest-cov="*"
 
 [dev-packages]
 black = "*"
