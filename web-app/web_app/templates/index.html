@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <title>Interview Answer System</title>
     <style>
-        /* 基本页面样式 */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f2f2f2;
@@ -20,16 +19,9 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        h1 {
+        h1, h2 {
             text-align: center;
             color: #4CAF50;
-        }
-        h2 {
-            margin-top: 20px;
-            color: #333;
-        }
-        p {
-            line-height: 1.6;
         }
         button {
             background-color: #4CAF50;
@@ -72,10 +64,7 @@
             margin: 10px auto;
             max-width: 100%;
         }
-        .record-controls {
-            text-align: center;
-        }
-        .navigation {
+        .record-controls, .navigation {
             text-align: center;
             margin-top: 20px;
         }
@@ -98,116 +87,116 @@
 </head>
 <body>
     <div class="container">
-      <!-- 显示 flash 消息 -->
-      {% with messages = get_flashed_messages() %}
-        {% if messages %}
-          <ul class="flashes">
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-          </ul>
-        {% endif %}
-      {% endwith %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
 
-      <h1>Interview Answer System</h1>
-      <h2>Interview Question:</h2>
-      <p>{{ question }}</p>
-  
-      <h2>Record and submit your answer:</h2>
-      <div class="record-controls">
-          <button id="startBtn">Start Recording</button>
-          <button id="stopBtn" disabled>Stop Recording</button>
-          <p id="status"></p>
-          <audio id="audioPlayback" controls></audio>
-      </div>
-  
-      <form id="uploadForm" action="{{ url_for('submit_audio') }}" 
-            method="post" enctype="multipart/form-data">
-          <input type="hidden" name="question_index" value="{{ question_index }}">
-          <input type="file" id="audioFile" name="audio_file" style="display: none;">
-          <button type="submit">Submit Answer</button>
-      </form>
-  
-      <div class="navigation">
-        {% if question_index + 1 < total_questions %}
-          <p>
-            <a href="{{ url_for('index', q=question_index + 1) }}">Next Question</a>
-          </p>
+        <h1>Interview Answer System</h1>
+        <h2>Interview Question:</h2>
+        <p>{{ question }}</p>
+
+        <h2>Record and submit your answer:</h2>
+        <div class="record-controls">
+            <button id="startBtn">Start Recording</button>
+            <button id="stopBtn" disabled>Stop Recording</button>
+            <p id="status"></p>
+            <audio id="audioPlayback" controls></audio>
+        </div>
+
+        <form id="uploadForm" action="{{ url_for('submit_audio') }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="question_index" value="{{ question_index }}">
+            <input type="file" id="audioFile" name="audio_file" style="display: none;">
+            <button type="submit">Submit Answer</button>
+        </form>
+
+        <div class="navigation">
+            {% if question_index + 1 < total_questions %}
+                <p><a href="{{ url_for('index', q=question_index + 1) }}">Next Question</a></p>
+            {% else %}
+                <p><a href="{{ url_for('index', q=0) }}">Restart Questions</a></p>
+            {% endif %}
+        </div>
+
+        <h2>Recent Answer Records</h2>
+        {% if records %}
+            <ul>
+                {% for record in records %}
+                    <li>
+                        <strong>Transcript:</strong> {{ record.transcript }} <br>
+                        <strong>Analysis:</strong> {{ record.analysis }}
+                    </li>
+                {% endfor %}
+            </ul>
         {% else %}
-          <p>
-            <a href="{{ url_for('index', q=0) }}">Restart Questions</a>
-          </p>
+            <p>No records found.</p>
         {% endif %}
-      </div>
-  
-      <h2>Recent Answer Records</h2>
-      {% if records %}
-          <ul>
-              {% for record in records %}
-                  <li>
-                      <strong>Transcript:</strong> {{ record.transcript }} <br>
-                      <strong>Analysis:</strong> {{ record.analysis }}
-                  </li>
-              {% endfor %}
-          </ul>
-      {% else %}
-          <p>No records found.</p>
-      {% endif %}
-  
-      <script>
-          let mediaRecorder;
-          let audioChunks = [];
-  
-          const startBtn = document.getElementById('startBtn');
-          const stopBtn = document.getElementById('stopBtn');
-          const statusText = document.getElementById('status');
-          const audioPlayback = document.getElementById('audioPlayback');
-  
-          startBtn.addEventListener('click', async () => {
-              statusText.textContent = "Recording...";
-              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-              let options = {};
-              if (MediaRecorder.isTypeSupported('audio/webm')) {
-                  options.mimeType = 'audio/webm';
-              }
-              mediaRecorder = new MediaRecorder(stream, options);
-              mediaRecorder.start();
-              audioChunks = [];
-  
-              mediaRecorder.addEventListener('dataavailable', event => {
-                  audioChunks.push(event.data);
-              });
-  
-              mediaRecorder.addEventListener('stop', () => {
-                  const audioBlob = new Blob(
-                    audioChunks, 
-                    { type: options.mimeType || 'audio/wav' }
-                  );
-                  const audioUrl = URL.createObjectURL(audioBlob);
-                  audioPlayback.src = audioUrl;
-                  const extension = options.mimeType === 'audio/webm' ? 'webm' : 'wav';
-                  const file = new File(
-                    [audioBlob], 
-                    'recording.' + extension, 
-                    { type: options.mimeType || 'audio/wav' }
-                  );
-                  const dataTransfer = new DataTransfer();
-                  dataTransfer.items.add(file);
-                  document.getElementById('audioFile').files = dataTransfer.files;
-                  statusText.textContent = "Recording complete";
-              });
-  
-              startBtn.disabled = true;
-              stopBtn.disabled = false;
-          });
-  
-          stopBtn.addEventListener('click', () => {
-              mediaRecorder.stop();
-              startBtn.disabled = false;
-              stopBtn.disabled = true;
-          });
-      </script>
+
+        <script>
+            let mediaRecorder;
+            let audioChunks = [];
+
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const statusText = document.getElementById('status');
+            const audioPlayback = document.getElementById('audioPlayback');
+            const audioFileInput = document.getElementById('audioFile');
+
+            startBtn.addEventListener('click', async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+                    if (!mimeType) {
+                        alert("Your browser doesn't support required audio format.");
+                        return;
+                    }
+
+                    mediaRecorder = new MediaRecorder(stream, { mimeType });
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(audioChunks, { type: mimeType });
+                        const url = URL.createObjectURL(blob);
+                        audioPlayback.src = url;
+
+                        const extension = mimeType.split('/')[1];
+                        const file = new File([blob], 'recording.' + extension, { type: mimeType });
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        audioFileInput.files = dt.files;
+
+                        statusText.textContent = "Recording complete";
+                    };
+
+                    mediaRecorder.start();
+                    statusText.textContent = "Recording...";
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                } catch (error) {
+                    alert("Recording error: " + error.message);
+                }
+            });
+
+            stopBtn.addEventListener('click', () => {
+                if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                }
+            });
+        </script>
     </div>
 </body>
 </html>
-

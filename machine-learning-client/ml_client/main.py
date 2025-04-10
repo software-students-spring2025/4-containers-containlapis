@@ -1,76 +1,73 @@
 """
 This module repeatedly inserts mock data into a MongoDB collection.
 """
+
 from datetime import datetime
 import os
 import time
 import sounddevice as sd
 import soundfile as sf
 import openai
-from openai import OpenAI
 from dotenv import load_dotenv
-from pymongo import MongoClient
+import pymongo
 
 
-def record_audio(filename: str, duration: int = 10, fs: int = 44100):
+
+
+def record_audio(filename: str, duration: int = 10, file_storage: int = 44100):
     """
     Record audio from the microphone and save it to a file.
-    
+
     Parameters:
       filename (str): The file path to save the recording.
       duration (int): Duration of the recording in seconds.
       fs (int): Sample rate.
     """
     print("Recording audio... Speak now!")
-    recording = sd.rec(int(duration * fs), samplerate=fs, channels=1)
+    recording = sd.rec(
+        int(duration * file_storage), samplerate=file_storage, channels=1
+    )
     sd.wait()  # Wait until recording is finished
-    sf.write(filename, recording, fs)
+    sf.write(filename, recording, file_storage)
     print(f"Recording complete. Audio saved as {filename}")
 
 
-def transcribe_audio(filename: str, model: str = "gpt-4o-transcribe") -> str:
+def transcribe_audio(filename: str, model: str = "whisper-1") -> str:
     """
-    Send the audio file to OpenAI's transcription API and get back the transcript.
-
-    Parameters:
-      filename (str): The path to the audio file.
-      model (str): The model to use for transcription (e.g. "gpt-4o-transcribe" or "whisper-1").
-
-    Returns:
-      str: The transcribed text.
+    Transcribe an audio file using OpenAI's transcription API.
     """
-    load_dotenv()  # Load from .env
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    load_dotenv()
+    client = openai.OpenAI()  # Automatically reads from OPENAI_API_KEY
 
-    client = OpenAI()
     with open(filename, "rb") as audio_file:
-        transcription_response = client.audio.transcriptions.create(
-            model=model, file=audio_file,
+        response = client.audio.transcriptions.create(
+            model=model,
+            file=audio_file,
         )
-    return transcription_response.text
-
+    return response.text
 
 def get_feedback_from_gpt(text: str, model: str = "gpt-4o") -> str:
     """
-    Send the transcript to the GPT API and return feedback.
+    Get constructive interview feedback from GPT based on provided text.
 
     Parameters:
-      transcript (str): The user's transcribed answer.
-      model (str): GPT model to use (default is "gpt-4o").
+      text (str): The input text (e.g., a candidate's answer to an interview question).
+      model (str): The model identifier to be used (default is "gpt-4o").
 
     Returns:
-      str: AI-generated feedback.
+      str: The GPT-generated feedback.
     """
-    client = OpenAI()
-
+    load_dotenv()
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    client = openai.OpenAI()
     response = client.chat.completions.create(
         model=model,
         messages=[
             {
                 "role": "system",
                 "content": """You are an interview coach.
-             Give constructive feedback on the user's answer to a job interview question.
-             Highlight strengths, suggest improvements, and be concise.""",
+                Give constructive feedback on the user's answer to a job interview question.
+                Highlight strengths, suggest improvements, and be concise.""",
             },
             {"role": "user", "content": text},
         ],
@@ -92,14 +89,12 @@ def save_recording_to_mongodb(
       feedback (str): The feedback provided by the GPT model.
       duration (int): Duration of the recording in seconds.
     """
-    # Load environment variables if not already loaded
     load_dotenv()
-    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-    client = MongoClient(mongo_uri)
-    db = client["ml_database"]
-    collection = db["ml_collection"]
+    local_mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+    client = pymongo.MongoClient(local_mongo_uri)
+    local_database = client["web_app_db"]  # Renamed to avoid redefinition conflict
+    collection = local_database["records"]
 
-    # Build document to store metadata
     document = {
         "timestamp": datetime.utcnow(),
         "filename": filename,
@@ -118,35 +113,54 @@ def mock_data_insertion():
     """
     Continuously insert mock data into MongoDB.
     """
-    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-    client = MongoClient(mongo_uri)
-    db = client["ml_database"]
-    collection = db["ml_collection"]
+    mock_mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+    mock_client = pymongo.MongoClient(mock_mongo_uri)
+    mock_database = mock_client["ml_database"]
+    mock_collection = mock_database["ml_collection"]
 
     while True:
         mock = {"status": "ongoing", "message": "trial test, sending message"}
-        collection.insert_one(mock)
+        mock_collection.insert_one(mock)
         print("Inserted mock data once into MongoDB.")
         time.sleep(5)
 
 
 if __name__ == "__main__":
-    # Record user response
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    audio_filename = f"response_{timestamp}.wav"
-    record_audio(audio_filename, duration=10)
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+    mongo_client = pymongo.MongoClient(mongo_uri)
+    database = mongo_client["web_app_db"]
+    records_collection = database["records"]
 
-    # Transcribe audio
-    print("Transcribing audio...")
-    transcript = transcribe_audio(audio_filename)
-    print("Transcript:", transcript)
+    while True:
+        pending = records_collection.find_one({"status": "pending"})
+        if pending:
+            file_path = pending["file_path"]
+            record_id = pending["_id"]
 
-    # Get feedback from GPT
-    feedback = get_feedback_from_gpt(transcript)
-    print("\nAI Feedback:")
-    print(feedback)
+            print(f"Processing {file_path}...")
 
-    # Save the metadata (recording info, transcript, and feedback) to MongoDB
-    save_recording_to_mongodb(audio_filename, transcript, feedback, duration=10)
+            try:
+                transcript = transcribe_audio(file_path)
+                feedback = get_feedback_from_gpt(transcript)
 
-    # mock_data_insertion()
+                records_collection.update_one(
+                    {"_id": record_id},
+                    {
+                        "$set": {
+                            "transcript": transcript,
+                            "analysis": feedback,
+                            "status": "processed",
+                            "processed_at": datetime.utcnow(),
+                        }
+                    },
+                )
+                print("Processed and updated MongoDB.")
+            except (openai.OpenAIError, pymongo.errors.PyMongoError) as e:
+                print("Failed to process:", str(e))
+                records_collection.update_one(
+                    {"_id": record_id},
+                    {"$set": {"status": "error", "error_message": str(e)}},
+                )
+        else:
+            time.sleep(3)

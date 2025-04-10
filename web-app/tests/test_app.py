@@ -15,6 +15,7 @@ from web_app.app import (
 
 # pylint: disable=redefined-outer-name
 
+
 class DummyCollection:
     """A dummy collection to simulate database operations for testing.
 
@@ -28,17 +29,21 @@ class DummyCollection:
     def count_documents(self, query):
         """Return the count of records that match the given query."""
         return sum(
-            1 for record in self.records
+            1
+            for record in self.records
             if all(record.get(k) == v for k, v in query.items())
         )
 
     def insert_one(self, record):
         """Simulate insertion of a record."""
         self.records.append(record)
+
         # pylint: disable=too-few-public-methods
         class DummyResult:
             """A dummy result object to simulate the result of a DB insertion."""
+
             inserted_id = "dummy_id"
+
         return DummyResult()
 
     def find(self):
@@ -114,7 +119,7 @@ def test_submit_audio_valid(client_fixture):
         "/submit_audio",
         data=data,
         content_type="multipart/form-data",
-        follow_redirects=True
+        follow_redirects=True,
     )
     assert response.status_code == 200
     content = response.data.decode("utf-8")
@@ -141,7 +146,7 @@ def test_submit_audio_multiple_attempts(client_fixture):
         "/submit_audio",
         data=data1,
         content_type="multipart/form-data",
-        follow_redirects=True
+        follow_redirects=True,
     )
     # Second submission for the same question index
     audio2 = io.BytesIO(b"Content 2")
@@ -151,7 +156,7 @@ def test_submit_audio_multiple_attempts(client_fixture):
         "/submit_audio",
         data=data2,
         content_type="multipart/form-data",
-        follow_redirects=True
+        follow_redirects=True,
     )
     assert len(dummy_collection.records) == 2
     first_record = dummy_collection.records[0]

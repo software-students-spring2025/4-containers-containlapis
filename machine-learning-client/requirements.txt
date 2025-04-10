@@ -6,3 +6,5 @@ pylint
 sounddevice
 soundfile
 openai
+python-dotenv
+
