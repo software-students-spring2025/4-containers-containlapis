@@ -121,6 +121,7 @@
             {% else %}
                 <p><a href="{{ url_for('index', q=0) }}">Restart Questions</a></p>
             {% endif %}
+            <button onclick="window.location.reload()">fetch newest record</button>
         </div>
 
         <h2>Recent Answer Records</h2>
