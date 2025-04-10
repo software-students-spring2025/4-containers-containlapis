@@ -109,8 +109,8 @@ def submit_audio():
             "status": "pending",
         }
         if app.testing:
-           record["transcript"] = "Simulated transcription"
-           record["analysis"] = "Analysis result"
+            record["transcript"] = "Simulated transcription"
+            record["analysis"] = "Analysis result"
         collection.insert_one(record)
 
         flash("Audio submitted successfully!")
